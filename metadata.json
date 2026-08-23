@@ -1,0 +1,6 @@
+{
+  "name": "Kutumba Ashirvada Sadassu 2026",
+  "description": "3rd Annual Family Blessing Convention invite & registration site for Next Generation Ministries.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
