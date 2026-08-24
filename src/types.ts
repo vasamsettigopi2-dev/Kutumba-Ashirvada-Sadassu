@@ -25,3 +25,16 @@ export interface Registration {
     reminder_1?: MessageStatus;
   };
 }
+
+export interface AgendaSession {
+  id?: string;
+  day: string; // e.g., 'Day 1 - Oct 16'
+  date: string; // YYYY-MM-DD
+  startTime: string; // e.g., '09:00 AM'
+  endTime: string; // e.g., '10:30 AM'
+  title: string;
+  speaker?: string;
+  description?: string;
+  ytLiveLink?: string;
+  notesLink?: string;
+}

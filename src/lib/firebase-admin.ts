@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import fs from 'fs';
@@ -13,13 +13,26 @@ try {
   console.warn('Could not read firebase-applet-config.json', e);
 }
 
-// Initialize Admin SDK using ADC
+// Initialize Admin SDK
 if (!getApps().length) {
-  initializeApp();
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      initializeApp({
+        credential: cert(serviceAccount)
+      });
+      console.log('Firebase Admin initialized with custom Service Account.');
+    } catch (error) {
+      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', error);
+      initializeApp(); // Fallback to ADC
+    }
+  } else {
+    initializeApp(); // ADC
+  }
 }
 
 const adminApp = getApp();
-const db = getFirestore(adminApp, config.firestoreDatabaseId || '(default)');
+const targetDbId = process.env.FIREBASE_SERVICE_ACCOUNT ? '(default)' : config.firestoreDatabaseId;
+const db = targetDbId ? getFirestore(adminApp, targetDbId) : getFirestore(adminApp);
 const auth = getAuth(adminApp);
-
 export { adminApp, db, auth };

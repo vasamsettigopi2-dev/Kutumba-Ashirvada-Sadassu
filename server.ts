@@ -1,4 +1,6 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
+
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { db, auth } from './src/lib/firebase-admin';
@@ -90,21 +92,48 @@ async function startServer() {
     }
   });
 
-  // Admin middleware to verify Firebase Auth token
-  const verifyAdmin = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+
+  // Secure JWT Secret
+  const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-demo';
+
+  // Custom Admin Login Route
+
+  app.post('/api/admin/login', async (req, res) => {
+    const { username, password } = req.body;
+    if ((username === 'admin1' && password === 'admin1') || 
+        (username === 'admin2' && password === 'admin2') ||
+        (username === 'admin@demo.com' && password === 'admin123')) {
+      
+      try {
+        const firebaseToken = await auth.createCustomToken(username);
+        const token = jwt.sign({ email: username, uid: username }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, firebaseToken, email: username });
+      } catch (e) {
+        console.error("Firebase custom token error:", e);
+        res.status(500).json({ error: 'Failed to generate token' });
+      }
+    } else {
+      res.status(401).json({ error: 'Invalid credentials' });
+    }
+  });
+
+
+  // Custom Admin middleware using JWT
+  const verifyAdmin = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     try {
       const token = authHeader.split('Bearer ')[1];
-      const decodedToken = await auth.verifyIdToken(token);
-      (req as any).user = decodedToken;
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = decoded;
       next();
     } catch (e) {
       res.status(401).json({ error: 'Invalid token' });
     }
   };
+
 
   app.get('/api/admin/registrations', verifyAdmin, async (req, res) => {
     try {
@@ -161,18 +190,120 @@ async function startServer() {
     }
   });
 
+  
+app.get('/api/admin/seed-agenda', async (req, res) => {
+  const sessions = [
+    { day: 'Day 1', date: '2026-10-16', startTime: '18:00', endTime: '21:00', title: 'Opening Ceremony & Welcome Worship', speaker: 'Pastor John', ytLiveLink: '', notesLink: '' },
+    { day: 'Day 2', date: '2026-10-17', startTime: '09:00', endTime: '12:00', title: 'Morning Worship & Message', speaker: 'Rev. Samuel', ytLiveLink: '', notesLink: '' },
+    { day: 'Day 2', date: '2026-10-17', startTime: '14:00', endTime: '16:00', title: 'Youth Workshop: Walking in Faith', speaker: 'Brother David', ytLiveLink: '', notesLink: '' },
+    { day: 'Day 3', date: '2026-10-18', startTime: '10:00', endTime: '13:00', title: 'Sunday Special Service', speaker: 'Pastor John', ytLiveLink: '', notesLink: '' },
+    { day: 'Day 4', date: '2026-10-19', startTime: '10:00', endTime: '12:00', title: 'Leadership Seminar', speaker: 'Rev. Samuel', ytLiveLink: '', notesLink: '' },
+    { day: 'Day 5', date: '2026-10-20', startTime: '18:00', endTime: '21:00', title: 'Closing Ceremony & Thanksgiving', speaker: 'Pastor John', ytLiveLink: '', notesLink: '' },
+  ];
+  
+  try {
+    for (const session of sessions) {
+      await db.collection('agenda').add(session);
+    }
+    res.json({ success: true, message: 'Agenda seeded' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+  
+  // Agenda Admin Routes
+
+  app.get('/api/admin/agenda', async (req, res) => {
+    try {
+      const snapshot = await db.collection('agenda').get();
+      const agenda = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      res.json({ agenda });
+    } catch (error) {
+      console.error('Fetch agenda error:', error);
+      res.status(500).json({ error: 'Failed to fetch agenda' });
+    }
+  });
+
+  app.post('/api/admin/agenda', verifyAdmin, async (req, res) => {
+    try {
+      const docRef = await db.collection('agenda').add(req.body);
+      res.json({ success: true, id: docRef.id });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to add agenda session: ' + e.message });
+    }
+  });
+
+  app.put('/api/admin/agenda/:id', verifyAdmin, async (req, res) => {
+    try {
+      await db.collection('agenda').doc(req.params.id).update(req.body);
+      res.json({ success: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to update agenda session: ' + e.message });
+    }
+  });
+
+  app.delete('/api/admin/agenda/:id', verifyAdmin, async (req, res) => {
+    try {
+      await db.collection('agenda').doc(req.params.id).delete();
+      res.json({ success: true });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: 'Failed to delete agenda session' });
+    }
+  });
+
   app.post('/api/admin/resend', verifyAdmin, async (req, res) => {
     try {
-      const { id } = req.body;
+      const { id, messageType } = req.body;
       const doc = await db.collection('registrations').doc(id).get();
       if (!doc.exists) return res.status(404).json({ error: 'Not found' });
       
-      await sendConfirmation(doc.id, doc.data() as any);
-      res.json({ success: true, message: 'Resend triggered' });
+      const regData = doc.data();
+      
+      if (messageType === 'confirmation') {
+        await sendConfirmation(doc.id, regData);
+      } else if (messageType && messageType.startsWith('reminder')) {
+        // Send manual reminder
+        const waToken = process.env.WHATSAPP_TOKEN;
+        const waPhoneId = process.env.WHATSAPP_PHONE_ID;
+        
+        if (waToken && waPhoneId && regData.phone) {
+          const response = await fetch(`https://graph.facebook.com/v17.0/${waPhoneId}/messages`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${waToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messaging_product: "whatsapp",
+              to: regData.phone.replace(/\D/g, ''),
+              type: "template",
+              template: {
+                name: "daily_reminder",
+                language: { code: "te" }
+              }
+            })
+          });
+          if (response.ok) {
+             await doc.ref.update({ [messageType]: true, [`whatsapp_status.${messageType}`]: { status: 'sent', timestamp: new Date().toISOString() } });
+          } else {
+             await doc.ref.update({ [`whatsapp_status.${messageType}`]: { status: 'failed', timestamp: new Date().toISOString() } });
+          }
+        } else {
+          // Simulated dev mode
+          await doc.ref.update({ [messageType]: true, [`whatsapp_status.${messageType}`]: { status: 'sent', timestamp: new Date().toISOString() } });
+        }
+      } else {
+        await sendConfirmation(doc.id, regData);
+      }
+      
+      res.json({ success: true, message: 'Message sent' });
     } catch (error) {
+      console.error(error);
       res.status(500).json({ error: 'Resend failed' });
     }
   });
+      
 
   // Cloud Scheduler Endpoint target
   app.post('/api/cron/reminders', async (req, res) => {

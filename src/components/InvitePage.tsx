@@ -4,11 +4,39 @@ import { MapPin, Clock, Loader2, CheckCircle, ArrowRight, X, Phone, CalendarDays
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { Video, FileText } from 'lucide-react';
+
+
 export default function InvitePage() {
   const [showRegForm, setShowRegForm] = useState(false);
   const [lang, setLang] = useState<'te' | 'en'>('te');
   const [isLoading, setIsLoading] = useState(true);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
+
+  const [agenda, setAgenda] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchAgenda = async () => {
+      try {
+        const res = await fetch('/api/admin/agenda');
+        const data = await res.json();
+        if (data.agenda) {
+          const docs = data.agenda;
+          docs.sort((a: any, b: any) => {
+            if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '');
+            return (a.startTime || '').localeCompare(b.startTime || '');
+          });
+          setAgenda(docs);
+        }
+      } catch (e) {
+        console.error('Error fetching agenda', e);
+      }
+    };
+    fetchAgenda();
+  }, []);
+
   
   useEffect(() => {
     // Elegant minimum preloader duration
@@ -241,67 +269,47 @@ export default function InvitePage() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="pt-4 mt-2 border-t border-zinc-800/50 flex flex-col gap-6">
-                          {/* Morning Session */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-4">
-                              <div className="w-6 h-6 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                                <Clock className="w-3 h-3" />
+                        <div className="pt-4 mt-2 border-t border-zinc-800/50 flex flex-col gap-3">
+                          {(() => {
+                            const daySessions = agenda.filter(s => s.date === `2026-10-${item.date}`);
+                            if (daySessions.length === 0) {
+                              return (
+                                <div className="text-zinc-500 text-xs text-center py-4">
+                                  {lang === 'te' ? 'ఈ రోజుకి ఇంకా తరగతులు నిర్ణయించబడలేదు' : 'No sessions scheduled yet for this day.'}
+                                </div>
+                              );
+                            }
+                            return daySessions.map((session, idx) => (
+                              <div key={session.id || idx} className="bg-zinc-900/50 p-3.5 rounded-xl border border-zinc-800 flex flex-col gap-2 relative group/session hover:border-amber-500/30 transition-colors">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex flex-col">
+                                    <span className="text-zinc-200 font-medium text-sm">{session.title}</span>
+                                    {session.speaker && <span className="text-zinc-500 text-xs mt-0.5">{session.speaker}</span>}
+                                  </div>
+                                  <div className="text-amber-500/80 font-mono text-xs whitespace-nowrap ml-2">
+                                    {session.startTime} - {session.endTime}
+                                  </div>
+                                </div>
+                                {(session.ytLiveLink || session.notesLink) && (
+                                  <div className="flex flex-wrap gap-2 mt-1.5 pt-2 border-t border-zinc-800/50">
+                                    {session.ytLiveLink && (
+                                      <a href={session.ytLiveLink} target="_blank" rel="noreferrer" className="flex items-center text-[10px] font-medium text-red-400 bg-red-400/10 px-2.5 py-1.5 rounded-md hover:bg-red-400/20 transition-colors">
+                                        <Video className="w-3.5 h-3.5 mr-1.5" /> {lang === 'te' ? 'లైవ్ చూడండి' : 'Watch Live'}
+                                      </a>
+                                    )}
+                                    {session.notesLink && (
+                                      <a href={session.notesLink} target="_blank" rel="noreferrer" className="flex items-center text-[10px] font-medium text-blue-400 bg-blue-400/10 px-2.5 py-1.5 rounded-md hover:bg-blue-400/20 transition-colors">
+                                        <FileText className="w-3.5 h-3.5 mr-1.5" /> {lang === 'te' ? 'నోట్స్' : 'Class Notes'}
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              <h4 className="text-xs font-semibold tracking-wider uppercase text-zinc-300">
-                                {lang === 'te' ? 'ఉదయం తరగతులు' : 'Morning Classes'} <span className="text-zinc-500 font-mono lowercase tracking-normal ml-1">(10am - 4pm)</span>
-                              </h4>
-                            </div>
-                            <div className="space-y-3 pl-3.5 border-l-2 border-zinc-800 ml-3">
-                              <div className="flex items-start justify-between text-xs relative">
-                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
-                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 1' : 'Class 1'}</span>
-                                <span className="text-zinc-500 font-mono">10:00am - 11:00am</span>
-                              </div>
-                              <div className="flex items-start justify-between text-xs relative">
-                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
-                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 2' : 'Class 2'}</span>
-                                <span className="text-zinc-500 font-mono">11:00am - 12:00pm</span>
-                              </div>
-                              <div className="flex items-start justify-between text-xs py-2 my-2 bg-amber-500/5 -mx-4 px-4 border-y border-amber-500/10 relative">
-                                <span className="absolute -left-[19px] top-3 w-2 h-2 rounded-full bg-amber-500 border-2 border-zinc-950 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                                <span className="text-amber-500/80 font-medium tracking-wide">{lang === 'te' ? 'భోజన విరామం' : 'Lunch Break'}</span>
-                                <span className="text-amber-500/60 font-mono">12:00pm - 02:00pm</span>
-                              </div>
-                              <div className="flex items-start justify-between text-xs relative">
-                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
-                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 3' : 'Class 3'}</span>
-                                <span className="text-zinc-500 font-mono">02:00pm - 03:00pm</span>
-                              </div>
-                              <div className="flex items-start justify-between text-xs relative">
-                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
-                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 4' : 'Class 4'}</span>
-                                <span className="text-zinc-500 font-mono">03:00pm - 04:00pm</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Evening Session */}
-                          <div className="mb-2">
-                            <div className="flex items-center gap-2 mb-4">
-                              <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                                <Clock className="w-3 h-3" />
-                              </div>
-                              <h4 className="text-xs font-semibold tracking-wider uppercase text-zinc-300">
-                                {lang === 'te' ? 'బహిరంగ సభ' : 'Public Meeting'} <span className="text-zinc-500 font-mono lowercase tracking-normal ml-1">(6pm - 9pm)</span>
-                              </h4>
-                            </div>
-                            <div className="space-y-3 pl-3.5 border-l-2 border-zinc-800 ml-3">
-                              <div className="flex items-start justify-between text-xs relative">
-                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-emerald-500 border-2 border-zinc-950 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                                <span className="text-zinc-300 font-medium">{lang === 'te' ? 'దేవుని వాక్య పరిచర్య' : 'Evening Session'}</span>
-                                <span className="text-emerald-500/80 font-mono">06:00pm - 09:00pm</span>
-                              </div>
-                            </div>
-                          </div>
+                            ));
+                          })()}
                         </div>
                       </motion.div>
                     )}

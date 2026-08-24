@@ -1,22 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 
 export default function CheckIn() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [result, setResult] = useState<{ status: 'success' | 'error', message: string, data?: any } | null>(null);
   const [processing, setProcessing] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) navigate('/admin');
-      else setUser(u);
-    });
-    return unsub;
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/admin');
+    } else {
+      setUser({ token });
+    }
   }, [navigate]);
 
   useEffect(() => {
@@ -45,7 +44,7 @@ export default function CheckIn() {
     if (processing) return;
     setProcessing(true);
     try {
-      const token = await user?.getIdToken();
+      const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
