@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
-import { Search, LogOut, Download, RefreshCw, QrCode, MessageCircle, MapPin, Users, Utensils } from 'lucide-react';
+import { Search, LogOut, Download, RefreshCw, QrCode, MessageCircle, MapPin, Users, Utensils, Bell } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Registration } from '../types';
 
@@ -105,19 +105,18 @@ export default function AdminDashboard() {
     XLSX.writeFile(wb, "KAS2026_Registrations.xlsx");
   };
 
-  const handleResend = async (id: string) => {
-    if (!user) return;
-    const token = await user.getIdToken();
-    try {
-      await fetch('/api/admin/resend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ id })
-      });
-      alert('Resend triggered');
-    } catch(e) {
-      alert('Failed to resend');
+  const sendWhatsAppManual = (reg: Registration, type: 'welcome' | 'reminder') => {
+    let phone = reg.phone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    let message = '';
+    if (type === 'welcome') {
+      message = `Shalom ${reg.name} garu, 🙏\n\nYour registration for *Kutumba Ashirvada Sadassu 2026* is confirmed!\n\n*Your Code:* ${reg.unique_code}\n*Category:* ${reg.category}\n*Family Size:* ${reg.family_size}\n\nPlease save this code. You will need to show this at the entrance.\n\nGod Bless You!`;
+    } else {
+      message = `Shalom ${reg.name} garu, 🙏\n\nGentle reminder! *Kutumba Ashirvada Sadassu 2026* is approaching.\n\n*Your Code:* ${reg.unique_code}\n\nWe look forward to seeing you there!`;
     }
+    
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-200">Loading...</div>;
@@ -246,9 +245,14 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                     <td className="p-4 text-right">
-                       <button onClick={() => handleResend(r.id!)} className="text-zinc-500 hover:text-amber-500 p-2 rounded-lg hover:bg-amber-500/10 transition-colors" title="Resend WhatsApp">
-                         <MessageCircle className="w-5 h-5" />
-                       </button>
+                       <div className="flex items-center justify-end gap-2">
+                         <button onClick={() => sendWhatsAppManual(r, 'welcome')} className="text-zinc-500 hover:text-emerald-500 p-2 rounded-lg hover:bg-emerald-500/10 transition-colors" title="Send Welcome Msg">
+                           <MessageCircle className="w-5 h-5" />
+                         </button>
+                         <button onClick={() => sendWhatsAppManual(r, 'reminder')} className="text-zinc-500 hover:text-amber-500 p-2 rounded-lg hover:bg-amber-500/10 transition-colors" title="Send Reminder Msg">
+                           <Bell className="w-5 h-5" />
+                         </button>
+                       </div>
                     </td>
                   </tr>
                 ))}
@@ -284,9 +288,12 @@ export default function AdminDashboard() {
                   <span className="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-1 rounded text-xs flex items-center"><Users className="w-3 h-3 mr-1" /> {r.family_size}</span>
                   <span className="bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-1 rounded text-xs flex items-center"><Utensils className="w-3 h-3 mr-1" /> {r.dietary_pref}</span>
                   
-                  <div className="ml-auto">
-                    <button onClick={() => handleResend(r.id!)} className="text-zinc-400 hover:text-amber-500 p-1.5 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-colors flex items-center gap-1.5 text-xs">
-                      <MessageCircle className="w-3.5 h-3.5" /> Resend
+                  <div className="ml-auto flex items-center gap-2">
+                    <button onClick={() => sendWhatsAppManual(r, 'welcome')} className="text-emerald-500 hover:text-emerald-400 p-1.5 rounded-lg border border-emerald-500/30 hover:border-emerald-500/60 bg-emerald-500/10 transition-colors flex items-center gap-1.5 text-xs font-medium">
+                      <MessageCircle className="w-3.5 h-3.5" /> Welcome
+                    </button>
+                    <button onClick={() => sendWhatsAppManual(r, 'reminder')} className="text-amber-500 hover:text-amber-400 p-1.5 rounded-lg border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 transition-colors flex items-center gap-1.5 text-xs font-medium">
+                      <Bell className="w-3.5 h-3.5" /> Reminder
                     </button>
                   </div>
                 </div>

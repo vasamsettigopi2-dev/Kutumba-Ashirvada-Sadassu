@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
-import { MapPin, Clock, Loader2, CheckCircle, ArrowRight, X, Phone, CalendarDays } from 'lucide-react';
+import { MapPin, Clock, Loader2, CheckCircle, ArrowRight, X, Phone, CalendarDays, ChevronDown } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 
@@ -8,6 +8,7 @@ export default function InvitePage() {
   const [showRegForm, setShowRegForm] = useState(false);
   const [lang, setLang] = useState<'te' | 'en'>('te');
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
   
   useEffect(() => {
     // Elegant minimum preloader duration
@@ -197,37 +198,118 @@ export default function InvitePage() {
               { date: '18', dayEn: 'Sunday', dayTe: 'ఆదివారం' },
               { date: '19', dayEn: 'Monday', dayTe: 'సోమవారం' },
               { date: '20', dayEn: 'Tuesday', dayTe: 'మంగళవారం' }
-            ].map((item, i) => (
-              <motion.div key={i} variants={fadeUp}>
-                <motion.div 
-                  whileHover={{ x: 4 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`group p-4 md:p-5 rounded-2xl bg-zinc-900/20 border border-zinc-800/40 hover:bg-zinc-900/60 hover:border-zinc-700/50 transition-colors duration-300 relative overflow-hidden flex items-center gap-4 ${i === 4 ? 'md:col-span-2 w-full md:max-w-md md:mx-auto' : ''}`}
+            ].map((item, i) => {
+              const isExpanded = expandedDay === i;
+              return (
+              <motion.div key={i} variants={fadeUp} className={i === 4 ? 'md:col-span-2 w-full md:max-w-md md:mx-auto' : ''}>
+                <div 
+                  onClick={() => setExpandedDay(isExpanded ? null : i)}
+                  className={`group p-4 md:p-5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden flex flex-col gap-4 ${isExpanded ? 'bg-zinc-900/40 border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.03)]' : 'bg-zinc-900/20 border-zinc-800/40 hover:bg-zinc-900/60 hover:border-zinc-700/50'}`}
                 >
-                  {/* Minimal Horizontal Layout */}
-                  <div className="flex flex-col items-center justify-center shrink-0 w-16 h-16 rounded-2xl bg-zinc-950 border border-zinc-800/50 group-hover:border-amber-500/30 transition-colors z-10">
-                    <span className="text-[9px] text-amber-500/80 font-bold tracking-widest uppercase mb-0.5">Oct</span>
-                    <span className="text-2xl font-light text-zinc-100 leading-none group-hover:text-white transition-colors">{item.date}</span>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0 z-10">
-                    <h3 className="text-sm font-medium text-zinc-200 mb-2">
-                      {lang === 'te' ? item.dayTe : item.dayEn}
-                    </h3>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-zinc-400 flex items-center"><span className="w-1 h-1 bg-amber-500/50 rounded-full mr-1.5"></span>{lang === 'te' ? 'ఉదయం తరగతులు' : 'Morning Classes'}</span>
-                        <span className="text-zinc-500 font-mono">10am - 4pm</span>
+                  {/* Header Row */}
+                  <div className="flex items-center gap-4 w-full">
+                    <div className={`flex flex-col items-center justify-center shrink-0 w-16 h-16 rounded-2xl border transition-colors z-10 ${isExpanded ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-950 border-zinc-800/50 group-hover:border-amber-500/30'}`}>
+                      <span className={`text-[9px] font-bold tracking-widest uppercase mb-0.5 ${isExpanded ? 'text-amber-500' : 'text-amber-500/80'}`}>Oct</span>
+                      <span className={`text-2xl font-light leading-none transition-colors ${isExpanded ? 'text-amber-400' : 'text-zinc-100 group-hover:text-white'}`}>{item.date}</span>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0 z-10">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <h3 className={`text-sm font-medium transition-colors ${isExpanded ? 'text-amber-400' : 'text-zinc-200'}`}>
+                          {lang === 'te' ? item.dayTe : item.dayEn}
+                        </h3>
+                        <motion.div 
+                          animate={{ rotate: isExpanded ? 180 : 0 }} 
+                          transition={{ duration: 0.3 }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-full ${isExpanded ? 'bg-amber-500/20 text-amber-500' : 'bg-zinc-800/50 text-zinc-400 group-hover:bg-zinc-700 group-hover:text-zinc-200'}`}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </motion.div>
                       </div>
-                      <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-zinc-400 flex items-center"><span className="w-1 h-1 bg-amber-500/50 rounded-full mr-1.5"></span>{lang === 'te' ? 'బహిరంగ సభ' : 'Public Meeting'}</span>
-                        <span className="text-zinc-500 font-mono">6pm - 9pm</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] uppercase tracking-wider font-semibold ${isExpanded ? 'text-amber-500/60' : 'text-zinc-500 group-hover:text-amber-500/60'} transition-colors`}>
+                          {lang === 'te' ? 'వివరాల కోసం ఇక్కడ నొక్కండి' : 'Tap to view schedule'}
+                        </span>
                       </div>
                     </div>
                   </div>
-                </motion.div>
+
+                  {/* Expanded Timetable */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pt-4 mt-2 border-t border-zinc-800/50 flex flex-col gap-6">
+                          {/* Morning Session */}
+                          <div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-6 h-6 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                                <Clock className="w-3 h-3" />
+                              </div>
+                              <h4 className="text-xs font-semibold tracking-wider uppercase text-zinc-300">
+                                {lang === 'te' ? 'ఉదయం తరగతులు' : 'Morning Classes'} <span className="text-zinc-500 font-mono lowercase tracking-normal ml-1">(10am - 4pm)</span>
+                              </h4>
+                            </div>
+                            <div className="space-y-3 pl-3.5 border-l-2 border-zinc-800 ml-3">
+                              <div className="flex items-start justify-between text-xs relative">
+                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
+                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 1' : 'Class 1'}</span>
+                                <span className="text-zinc-500 font-mono">10:00am - 11:00am</span>
+                              </div>
+                              <div className="flex items-start justify-between text-xs relative">
+                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
+                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 2' : 'Class 2'}</span>
+                                <span className="text-zinc-500 font-mono">11:00am - 12:00pm</span>
+                              </div>
+                              <div className="flex items-start justify-between text-xs py-2 my-2 bg-amber-500/5 -mx-4 px-4 border-y border-amber-500/10 relative">
+                                <span className="absolute -left-[19px] top-3 w-2 h-2 rounded-full bg-amber-500 border-2 border-zinc-950 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
+                                <span className="text-amber-500/80 font-medium tracking-wide">{lang === 'te' ? 'భోజన విరామం' : 'Lunch Break'}</span>
+                                <span className="text-amber-500/60 font-mono">12:00pm - 02:00pm</span>
+                              </div>
+                              <div className="flex items-start justify-between text-xs relative">
+                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
+                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 3' : 'Class 3'}</span>
+                                <span className="text-zinc-500 font-mono">02:00pm - 03:00pm</span>
+                              </div>
+                              <div className="flex items-start justify-between text-xs relative">
+                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-zinc-700 border-2 border-zinc-950"></span>
+                                <span className="text-zinc-400">{lang === 'te' ? 'తరగతి 4' : 'Class 4'}</span>
+                                <span className="text-zinc-500 font-mono">03:00pm - 04:00pm</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Evening Session */}
+                          <div className="mb-2">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                                <Clock className="w-3 h-3" />
+                              </div>
+                              <h4 className="text-xs font-semibold tracking-wider uppercase text-zinc-300">
+                                {lang === 'te' ? 'బహిరంగ సభ' : 'Public Meeting'} <span className="text-zinc-500 font-mono lowercase tracking-normal ml-1">(6pm - 9pm)</span>
+                              </h4>
+                            </div>
+                            <div className="space-y-3 pl-3.5 border-l-2 border-zinc-800 ml-3">
+                              <div className="flex items-start justify-between text-xs relative">
+                                <span className="absolute -left-[19px] top-1.5 w-2 h-2 rounded-full bg-emerald-500 border-2 border-zinc-950 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                                <span className="text-zinc-300 font-medium">{lang === 'te' ? 'దేవుని వాక్య పరిచర్య' : 'Evening Session'}</span>
+                                <span className="text-emerald-500/80 font-mono">06:00pm - 09:00pm</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </motion.section>
 
@@ -237,24 +319,45 @@ export default function InvitePage() {
           whileInView="visible" 
           viewport={{ once: true, margin: "-100px" }} 
           variants={staggerContainer} 
-          className="py-16 md:py-24 border-t border-white/5"
+          className="py-12 md:py-16 border-t border-white/5"
         >
-          <motion.div variants={fadeUp} className="p-8 md:p-14 rounded-[2rem] bg-zinc-900 border border-zinc-800 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 blur-[120px] rounded-full pointer-events-none transition-all duration-700 group-hover:bg-amber-500/10" />
-            <MapPin className="w-10 h-10 text-amber-500 mb-8" />
-            <h3 className="text-3xl font-bold text-zinc-50 mb-4">
-              {lang === 'te' ? 'డా॥ దయానంద్ వడ్డేపల్లి ఫంక్షన్ హాల్స్' : 'Dr. Dayanand Vaddepalli Function Hall'}
-            </h3>
-            <p className="text-zinc-400 mb-10 max-w-lg leading-relaxed text-lg">
-              {lang === 'te' ? 'వేములవాడ కమాన్ దగ్గర, కరీంనగర్ రోడ్, సిద్దిపేట, తెలంగాణ' : 'Near Vemulawada Common, Karimnagar Road, Siddipet, Telangana'}
-            </p>
+          <motion.div variants={fadeUp} className="p-6 md:p-8 rounded-[1.5rem] bg-zinc-900 border border-zinc-800/80 relative overflow-hidden group shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8">
+            {/* Faded Map Background Image */}
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-1000 opacity-[0.06] group-hover:opacity-[0.12]"
+              style={{
+                backgroundImage: `url("https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=2000")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'grayscale(100%) invert(100%)',
+                WebkitMaskImage: 'radial-gradient(circle at 100% 50%, black 0%, transparent 70%)',
+                maskImage: 'radial-gradient(circle at 100% 50%, black 0%, transparent 70%)'
+              }}
+            />
+            {/* Warm Glow Effect */}
+            <div className="absolute top-1/2 -translate-y-1/2 right-0 w-[400px] h-[400px] bg-amber-500/10 blur-[100px] rounded-full pointer-events-none transition-all duration-700 group-hover:bg-amber-500/20 z-0" />
+            
+            <div className="relative z-10 flex flex-col md:flex-row gap-5 items-start md:items-center">
+              <div className="shrink-0 w-14 h-14 rounded-2xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-center backdrop-blur-sm group-hover:border-amber-500/50 group-hover:scale-105 transition-all duration-500 shadow-xl">
+                <MapPin className="w-6 h-6 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-xl md:text-2xl font-bold text-zinc-50 mb-2 leading-tight">
+                  {lang === 'te' ? 'డా॥ దయానంద్ వడ్డేపల్లి ఫంక్షన్ హాల్స్' : 'Dr. Dayanand Vaddepalli Function Hall'}
+                </h3>
+                <p className="text-zinc-400 max-w-md leading-relaxed text-sm font-medium">
+                  {lang === 'te' ? 'వేములవాడ కమాన్ దగ్గర, కరీంనగర్ రోడ్, సిద్దిపేట, తెలంగాణ' : 'Near Vemulawada Common, Karimnagar Road, Siddipet, Telangana'}
+                </p>
+              </div>
+            </div>
+
             <motion.a 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               href="https://maps.google.com/?q=Dr.+Dayanand+Vaddepalli+Function+Hall+Siddipet" 
               target="_blank" 
               rel="noreferrer" 
-              className="inline-flex items-center space-x-3 text-sm font-semibold text-zinc-950 bg-zinc-50 hover:bg-amber-400 px-8 py-4 rounded-full transition-colors duration-300"
+              className="relative z-10 shrink-0 inline-flex items-center justify-center space-x-2 text-sm font-semibold text-amber-950 bg-amber-400 hover:bg-amber-300 px-6 py-3.5 rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(245,158,11,0.15)] hover:shadow-[0_0_25px_rgba(245,158,11,0.3)] w-full md:w-auto"
             >
               <span>{lang === 'te' ? 'దారి తెలుసుకోండి' : 'Get Directions'}</span>
               <ArrowRight className="w-4 h-4" />
