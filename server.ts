@@ -138,6 +138,29 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/update_whatsapp_status', verifyAdmin, async (req, res) => {
+    try {
+      const { id, messageType, status } = req.body;
+      const adminEmail = (req as any).user.email;
+      
+      const doc = await db.collection('registrations').doc(id).get();
+      if (!doc.exists) return res.status(404).json({ error: 'Not found' });
+      
+      const updateData: any = {};
+      updateData[`whatsapp_status.${messageType}`] = {
+        status,
+        timestamp: new Date().toISOString(),
+        admin_email: adminEmail
+      };
+      
+      await doc.ref.update(updateData);
+      res.json({ success: true, message: 'Status updated' });
+    } catch (error) {
+      console.error('Update status error:', error);
+      res.status(500).json({ error: 'Failed to update status' });
+    }
+  });
+
   app.post('/api/admin/resend', verifyAdmin, async (req, res) => {
     try {
       const { id } = req.body;

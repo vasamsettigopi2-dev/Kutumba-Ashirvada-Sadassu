@@ -1,3 +1,9 @@
+export interface MessageStatus {
+  status: 'pending' | 'sent' | 'failed';
+  timestamp?: string;
+  admin_email?: string;
+}
+
 export interface Registration {
   id?: string;
   name: string;
@@ -10,11 +16,12 @@ export interface Registration {
   dietary_pref: string;
   unique_code?: string;
   created_at?: { _seconds: number; _nanoseconds: number } | any;
-  whatsapp_sent?: boolean;
-  email_sent?: boolean;
-  reminder_3_sent?: boolean;
-  reminder_2_sent?: boolean;
-  reminder_1_sent?: boolean;
   checked_in?: boolean;
   checked_in_at?: any;
+  whatsapp_status?: {
+    confirmation?: MessageStatus;
+    reminder_3?: MessageStatus;
+    reminder_2?: MessageStatus;
+    reminder_1?: MessageStatus;
+  };
 }
