@@ -323,42 +323,42 @@ app.get('/api/admin/seed-agenda', async (req, res) => {
   });
 
   // Background cron to trigger daily reminders if running locally/continuously
+  if (!process.env.VERCEL) {
   cron.schedule('0 9 * * *', () => {
     console.log('Running daily reminder cron...');
     processDailyReminders().catch(console.error);
   });
-
-  
-// Vite middleware for development
-async function startDevServer() {
-  const { createServer: createViteServer } = await import('vite');
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  });
-  app.use(vite.middlewares);
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
-  });
 }
 
-if (process.env.NODE_ENV !== "production") {
-  startDevServer();
-} else {
-  const distPath = path.join(process.cwd(), 'dist');
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-  
-  if (!process.env.VERCEL) {
+
+// Vite middleware for development and static serving for production
+if (!process.env.VERCEL) {
+  (async () => {
+    if (process.env.NODE_ENV !== "production") {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        if (!req.path.startsWith('/api')) {
+          res.sendFile(path.join(distPath, 'index.html'));
+        }
+      });
+    }
+
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running on http://localhost:${PORT}`);
     });
-  }
+  })();
 }
 
 export default app;
+
 
 
 // Background Task Processors

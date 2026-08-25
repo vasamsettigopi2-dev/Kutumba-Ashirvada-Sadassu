@@ -26,12 +26,24 @@ try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
       try {
         let saString = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-        if (saString.startsWith('"') && saString.endsWith('"')) {
+        
+        // Vercel sometimes wraps the whole JSON in a string
+        if (saString.startsWith('"') && saString.endsWith('"') && !saString.startsWith('"{')) {
           saString = saString.slice(1, -1);
         }
-        saString = saString.replace(/\\\\n/g, '\\n');
         
-        const serviceAccount = JSON.parse(saString);
+        let serviceAccount;
+        try {
+          serviceAccount = JSON.parse(saString);
+        } catch (parseError) {
+          // If there's an error, it might be due to unescaped newlines in the private key.
+          // Let's carefully fix ONLY the private key part
+          saString = saString.replace(/(-----BEGIN [A-Z ]+-----)([\\s\\S]*?)(-----END [A-Z ]+-----)/, (match, p1, p2, p3) => {
+            return p1 + p2.replace(/\\n/g, '\\\\n') + p3;
+          });
+          serviceAccount = JSON.parse(saString);
+        }
+
         initializeApp({ credential: cert(serviceAccount) });
         console.log('Firebase Admin initialized with custom Service Account.');
       } catch (error) {
