@@ -2,14 +2,15 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 
 import path from 'path';
-
+import { createServer as createViteServer } from 'vite';
 import { db, auth } from './src/lib/firebase-admin';
 import nodemailer from 'nodemailer';
 import cron from 'node-cron';
 // Note: In a real Cloud Functions environment, WhatsApp integration uses fetch/axios.
 // We simulate the required Meta API call using standard fetch.
 
-const app = express();
+async function startServer() {
+  const app = express();
   const PORT = 3000;
 
   app.use(express.json());
@@ -327,38 +328,25 @@ app.get('/api/admin/seed-agenda', async (req, res) => {
     processDailyReminders().catch(console.error);
   });
 
-  
-// Vite middleware for development
-async function startDevServer() {
-  const { createServer: createViteServer } = await import('vite');
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  });
-  app.use(vite.middlewares);
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
-
-if (process.env.NODE_ENV !== "production") {
-  startDevServer();
-} else {
-  const distPath = path.join(process.cwd(), 'dist');
-  app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-  
-  if (!process.env.VERCEL) {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  }
-}
-
-export default app;
-
 
 // Background Task Processors
 async function sendConfirmation(regId: string, regData: any) {
@@ -499,4 +487,4 @@ async function logFailedSend(regId: string, type: string, error: string) {
   });
 }
 
-
+startServer();

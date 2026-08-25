@@ -2,7 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { AgendaSession } from '../../types';
 import { db } from '../../lib/firebase';
 import { Plus, Edit2, Trash2, Video, FileText, Calendar, Clock, Save, X } from 'lucide-react';
+import { z } from 'zod';
 
+const agendaSchema = z.object({
+  day: z.string().min(1, "Day label is required"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be HH:MM").optional().or(z.literal('')),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time must be HH:MM").optional().or(z.literal('')),
+  title: z.string().min(1, "Session title is required"),
+  speaker: z.string().optional(),
+  ytLiveLink: z.string().url("Live link must be a valid URL").optional().or(z.literal('')),
+  notesLink: z.string().url("Notes link must be a valid URL").optional().or(z.literal(''))
+});
 
 export default function AgendaView() {
   const [sessions, setSessions] = useState<AgendaSession[]>([]);
@@ -47,6 +58,8 @@ export default function AgendaView() {
 
   const handleSave = async () => {
     try {
+      const parsedData = agendaSchema.parse(formData);
+
       setIsSaving(true);
       const method = isEditing ? 'PUT' : 'POST';
       const url = isEditing ? `/api/admin/agenda/${isEditing}` : '/api/admin/agenda';
@@ -54,7 +67,7 @@ export default function AgendaView() {
       const res = await fetch(url, {
         method,
         headers: getAuthHeaders(),
-        body: JSON.stringify(formData)
+        body: JSON.stringify(parsedData)
       });
       
       if (!res.ok) {
@@ -67,8 +80,13 @@ export default function AgendaView() {
       setFormData({});
       fetchAgenda();
     } catch (e: any) {
-      console.error("Error saving session", e);
-      alert("Error saving session: " + e.message);
+      if (e instanceof z.ZodError) {
+        const errorMessages = e.issues.map(err => err.message).join('\n');
+        alert("Validation Error:\n" + errorMessages);
+      } else {
+        console.error("Error saving session", e);
+        alert("Error saving session: " + e.message);
+      }
     } finally {
       setIsSaving(false);
     }

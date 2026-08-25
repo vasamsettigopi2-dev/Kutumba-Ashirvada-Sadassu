@@ -1,43 +1,53 @@
 const fs = require('fs');
-let content = fs.readFileSync('server.ts', 'utf8');
+let code = fs.readFileSync('server.ts', 'utf8');
 
-content = content.replace("import express from 'express';", "import express from 'express';\nimport jwt from 'jsonwebtoken';\n");
+// Remove async function startServer() {
+code = code.replace('async function startServer() {\n  const app = express();', 'const app = express();');
 
-const verifyAdminReplacement = `
-  // Secure JWT Secret
-  const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-demo';
-
-  // Custom Admin Login Route
-  app.post('/api/admin/login', (req, res) => {
-    const { username, password } = req.body;
-    // Hardcoded 2 Admins for simplicity as requested
-    if ((username === 'admin1' && password === 'admin1') || 
-        (username === 'admin2' && password === 'admin2') ||
-        (username === 'admin@demo.com' && password === 'admin123')) {
-      const token = jwt.sign({ email: username, uid: username }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ token, email: username });
-    } else {
-      res.status(401).json({ error: 'Invalid credentials' });
-    }
+// Find the Vite middleware part
+const vitePartIndex = code.indexOf('// Vite middleware for development');
+if (vitePartIndex !== -1) {
+    const endVite = code.indexOf('}\n\n// Background Task Processors', vitePartIndex);
+    
+    const beforeVite = code.substring(0, vitePartIndex);
+    const afterVite = code.substring(endVite + 1);
+    
+    const newViteLogic = `
+// Vite middleware for development
+async function startDevServer() {
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: "spa",
   });
+  app.use(vite.middlewares);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(\`Server running on http://0.0.0.0:\${PORT}\`);
+  });
+}
 
-  // Custom Admin middleware using JWT
-  const verifyAdmin = async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    try {
-      const token = authHeader.split('Bearer ')[1];
-      const decoded = jwt.verify(token, JWT_SECRET);
-      req.user = decoded;
-      next();
-    } catch (e) {
-      res.status(401).json({ error: 'Invalid token' });
-    }
-  };
+if (process.env.NODE_ENV !== "production") {
+  startDevServer();
+} else {
+  const distPath = path.join(process.cwd(), 'dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+  
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(\`Server running on port \${PORT}\`);
+    });
+  }
+}
+
+export default app;
 `;
 
-content = content.replace(/  \/\/ Admin middleware to verify Firebase Auth token[\s\S]*?  \};/, verifyAdminReplacement);
+    code = beforeVite + newViteLogic + afterVite;
+}
 
-fs.writeFileSync('server.ts', content, 'utf8');
+// Remove the startServer(); at the end
+code = code.replace('startServer();', '');
+
+fs.writeFileSync('server.ts', code);
