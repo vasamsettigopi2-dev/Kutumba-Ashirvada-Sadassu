@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [fetching, setFetching] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [messageType, setMessageType] = useState<'confirmation' | 'reminder_3' | 'reminder_2' | 'reminder_1'>('confirmation');
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('syncing');
 
 
 
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
   const fetchRegistrations = async () => {
     if (!user) return;
     setFetching(true);
+    setSyncStatus('syncing');
     try {
       const token = await user.getIdToken();
       const res = await fetch('/api/admin/registrations', {
@@ -39,9 +41,13 @@ export default function AdminDashboard() {
       if (res.ok) {
         const data = await res.json();
         setRegistrations(data.registrations);
+        setSyncStatus('synced');
+      } else {
+        setSyncStatus('error');
       }
     } catch (e) {
       console.error("Error fetching registrations", e);
+      setSyncStatus('error');
     } finally {
       setFetching(false);
     }
@@ -134,7 +140,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <AdminLayout user={user} currentTab={currentTab} setCurrentTab={setCurrentTab} onLogout={handleLogout}>
+    <AdminLayout user={user} currentTab={currentTab} setCurrentTab={setCurrentTab} onLogout={handleLogout} syncStatus={syncStatus}>
       {currentTab === 'dashboard' && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <h1 className="text-2xl font-bold text-slate-900">Welcome back, Admin</h1>

@@ -104,12 +104,13 @@ const app = express();
         (username === 'admin@demo.com' && password === 'admin123')) {
       
       try {
+        if (!auth) throw new Error("Firebase Admin Auth is not initialized. Check FIREBASE_SERVICE_ACCOUNT env var.");
         const firebaseToken = await auth.createCustomToken(username);
         const token = jwt.sign({ email: username, uid: username }, JWT_SECRET, { expiresIn: '7d' });
         res.json({ token, firebaseToken, email: username });
       } catch (e) {
         console.error("Firebase custom token error:", e);
-        res.status(500).json({ error: 'Failed to generate token' });
+        res.status(500).json({ error: 'Failed to generate token: ' + (e.message || e) });
       }
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
