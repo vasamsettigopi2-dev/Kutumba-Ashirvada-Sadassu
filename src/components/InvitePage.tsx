@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
-import { MapPin, Clock, Loader2, CheckCircle, ArrowRight, X, Phone, CalendarDays, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
+import { MapPin, Clock, Loader2, CheckCircle, ArrowRight, X, Phone, CalendarDays, ChevronDown, Video, FileText } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
-
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../lib/firebase';
-import { Video, FileText } from 'lucide-react';
 
 
 export default function InvitePage() {
@@ -452,8 +448,7 @@ function RegistrationModal({ lang, onClose }: { lang: 'te'|'en', onClose: () => 
     email: '',
     church_city: '',
     category: 'Adult',
-    family_size: 1,
-    dietary_pref: 'Any',
+    gender: 'Male',
     days_attending: [] as string[]
   });
 
@@ -610,11 +605,31 @@ function RegistrationModal({ lang, onClose }: { lang: 'te'|'en', onClose: () => 
                   <div>
                     <label className="block text-sm font-semibold mb-2 text-zinc-300">Category</label>
                     <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 px-5 py-4 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all appearance-none cursor-pointer">
-                      <option>Children</option>
-                      <option>Youth</option>
                       <option>Adult</option>
-                      <option>Senior</option>
+                      <option>Youth</option>
+                      <option>Children</option>
                     </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-zinc-300">Gender *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['Male', 'Female'].map((genderOption) => (
+                      <button
+                        key={genderOption}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, gender: genderOption })}
+                        className={`py-3.5 px-4 rounded-xl text-sm font-semibold transition-all duration-200 border flex items-center justify-center gap-2 ${
+                          formData.gender === genderOption
+                            ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)]'
+                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${formData.gender === genderOption ? 'bg-zinc-950' : 'bg-zinc-600'}`}></span>
+                        {genderOption}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -639,21 +654,6 @@ function RegistrationModal({ lang, onClose }: { lang: 'te'|'en', onClose: () => 
                       <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-red-400 text-xs font-medium mt-3 ml-1">{fieldErrors.days}</motion.p>
                     )}
                   </AnimatePresence>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-zinc-300">Family Size</label>
-                    <input type="number" min="1" value={formData.family_size} onChange={e => setFormData({...formData, family_size: parseInt(e.target.value) || 1})} className="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 px-5 py-4 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-zinc-300">Food Pref</label>
-                    <select value={formData.dietary_pref} onChange={e => setFormData({...formData, dietary_pref: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 text-zinc-200 px-5 py-4 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none transition-all appearance-none cursor-pointer">
-                      <option>Any</option>
-                      <option>Vegetarian</option>
-                      <option>Non-Vegetarian</option>
-                    </select>
-                  </div>
                 </div>
               </div>
 

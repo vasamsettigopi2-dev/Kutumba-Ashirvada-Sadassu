@@ -3,11 +3,9 @@ import AdminLogin from './admin/AdminLogin';
 import AdminLayout from './admin/AdminLayout';
 import RegistrationsView from './admin/RegistrationsView';
 import AgendaView from './admin/AgendaView';
+import TemplatesView from './admin/TemplatesView';
 import SettingsView from './admin/SettingsView';
-
-
-
-
+import DeletedBinView from './admin/DeletedBinView';
 
 interface CustomUser {
   email: string;
@@ -17,39 +15,50 @@ interface CustomUser {
 export default function AdminDashboard() {
   const [user, setUser] = useState<CustomUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState('registrations');
   
   // Registrations State (lifted here so it persists across tabs)
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [fetching, setFetching] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [messageType, setMessageType] = useState<'confirmation' | 'reminder_3' | 'reminder_2' | 'reminder_1'>('confirmation');
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('syncing');
 
-
-
-
-  const fetchRegistrations = async () => {
-    if (!user) return;
-    setFetching(true);
+  const fetchRegistrations = async (force = false) => {
+    if (!force) {
+      setFetching(true);
+    }
     setSyncStatus('syncing');
     try {
-      const token = await user.getIdToken();
-      const res = await fetch('/api/admin/registrations', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const token = localStorage.getItem('adminToken');
+      const url = force
+        ? '/api/admin/registrations?forceFresh=true'
+        : '/api/admin/registrations';
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (res.ok) {
         const data = await res.json();
-        setRegistrations(data.registrations);
+        setRegistrations(prev => {
+          const next = data.registrations || [];
+          if (prev.length === next.length) {
+            const sameOrder = prev.every((p, i) => next[i] && p.id === next[i].id && JSON.stringify(p) === JSON.stringify(next[i]));
+            if (sameOrder) return prev;
+          }
+          return next;
+        });
         setSyncStatus('synced');
       } else {
         setSyncStatus('error');
       }
     } catch (e) {
-      console.error("Error fetching registrations", e);
+      console.error(e);
       setSyncStatus('error');
     } finally {
-      setFetching(false);
+      if (!force) {
+        setFetching(false);
+      }
     }
   };
 
@@ -63,9 +72,23 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      fetchRegistrations();
-    }
+    if (!user) return;
+    fetchRegistrations(false);
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchRegistrations(true);
+      }
+    }, 8000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchRegistrations(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [user]);
 
   const handleLogout = async () => {
@@ -73,8 +96,6 @@ export default function AdminDashboard() {
     localStorage.removeItem('adminEmail');
     setUser(null);
   };
-
-
 
   const toggleSelection = (id: string) => {
     const newSet = new Set(selectedIds);
@@ -88,45 +109,6 @@ export default function AdminDashboard() {
     else setSelectedIds(new Set(registrations.map(r => r.id!)));
   };
 
-  const startQueue = async () => {
-    if (selectedIds.size === 0) return;
-    if (!user) return;
-    
-    setFetching(true);
-    let successCount = 0;
-    try {
-      const token = await user.getIdToken();
-      
-      // Process in sequence to avoid overwhelming the server
-      for (const id of Array.from(selectedIds)) {
-        try {
-          const res = await fetch('/api/admin/resend', {
-            method: 'POST',
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ id, messageType })
-          });
-          
-          if (res.ok) successCount++;
-        } catch (e) {
-          console.error("Failed to resend for", id, e);
-        }
-      }
-      
-      alert(`Successfully sent messages to ${successCount} attendees!`);
-      // Refresh to get latest status
-      
-      setSelectedIds(new Set());
-    } catch (e) {
-      console.error(e);
-      alert('An error occurred while sending messages.');
-    } finally {
-      setFetching(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -136,7 +118,7 @@ export default function AdminDashboard() {
   }
 
   if (!user) {
-    return <AdminLogin onAuth={(u) => { setUser(u);  }} />;
+    return <AdminLogin onAuth={(u) => { setUser(u); }} />;
   }
 
   return (
@@ -163,6 +145,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
       {currentTab === 'registrations' && (
         <RegistrationsView 
           registrations={registrations}
@@ -171,28 +154,28 @@ export default function AdminDashboard() {
           selectedIds={selectedIds}
           toggleSelection={toggleSelection}
           toggleAll={toggleAll}
-          startQueue={startQueue}
-          messageType={messageType}
-          setMessageType={setMessageType}
+          onGoToBin={() => setCurrentTab('trash')}
         />
+      )}
+
+      {currentTab === 'templates' && (
+        <TemplatesView />
       )}
 
       {currentTab === 'agenda' && (
         <AgendaView />
       )}
 
-      {currentTab === 'settings' && (
-        <SettingsView />
+      {currentTab === 'trash' && (
+        <DeletedBinView 
+          registrations={registrations}
+          fetching={fetching}
+          onRefresh={fetchRegistrations}
+        />
       )}
 
-
       {currentTab === 'settings' && (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-           <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
-             <p className="text-slate-600">Settings page content goes here. (e.g. modify global configurations).</p>
-           </div>
-        </div>
+        <SettingsView />
       )}
     </AdminLayout>
   );

@@ -1,66 +1,115 @@
-
+import 'dotenv/config';
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import fs from 'fs';
 import path from 'path';
 
-let adminApp;
-let db;
-let auth;
+let adminApp: any = null;
+let db: any = null;
+let auth: any = null;
 
 try {
-  let config = {};
-  try {
-    const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-    if (fs.existsSync(configPath)) {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    }
-  } catch (e) {
-    console.warn('Could not read firebase-applet-config.json');
-  }
+  let serviceAccount: any = null;
 
-  if (!getApps().length) {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-      try {
-        let saString = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
-        
-        // Vercel sometimes wraps the whole JSON in a string
-        if (saString.startsWith('"') && saString.endsWith('"') && !saString.startsWith('"{')) {
-          saString = saString.slice(1, -1);
-        }
-        
-        let serviceAccount;
-        try {
-          serviceAccount = JSON.parse(saString);
-        } catch (parseError) {
-          // If there's an error, it might be due to unescaped newlines in the private key.
-          // Let's carefully fix ONLY the private key part
-          saString = saString.replace(/(-----BEGIN [A-Z ]+-----)([\s\S]*?)(-----END [A-Z ]+-----)/, (match, p1, p2, p3) => {
-            return p1 + p2.replace(/\n/g, '\\n') + p3;
-          });
-          serviceAccount = JSON.parse(saString);
-        }
+  // 1. Check Full JSON string in environment variables (Vercel & Local)
+  const rawSaEnv = 
+    process.env.FIREBASE_SERVICE_ACCOUNT || 
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY || 
+    process.env.FIREBASE_KEY || 
+    process.env.SERVICE_ACCOUNT;
 
-        initializeApp({ credential: cert(serviceAccount) });
-        console.log('Firebase Admin initialized with custom Service Account.');
-      } catch (error) {
-        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', error);
+  if (rawSaEnv && rawSaEnv.trim() !== '') {
+    try {
+      let saString = rawSaEnv.trim();
+      
+      // Clean possible wrapper quotes from Vercel env input
+      if (saString.startsWith('"') && saString.endsWith('"') && !saString.startsWith('"{')) {
+        saString = saString.slice(1, -1);
       }
-    } else {
-      console.log('No FIREBASE_SERVICE_ACCOUNT found, using fallback initialization');
-      initializeApp({ projectId: config.projectId });
+      
+      try {
+        serviceAccount = JSON.parse(saString);
+      } catch (parseError) {
+        // Fix unescaped newlines in private key
+        saString = saString.replace(/(-----BEGIN [A-Z ]+-----)([\s\S]*?)(-----END [A-Z ]+-----)/, (match, p1, p2, p3) => {
+          return p1 + p2.replace(/\n/g, '\\n') + p3;
+        });
+        serviceAccount = JSON.parse(saString);
+      }
+    } catch (e: any) {
+      console.warn('⚠️ Could not parse JSON from FIREBASE_SERVICE_ACCOUNT env var:', e.message);
     }
   }
 
-  if (getApps().length > 0) {
-    adminApp = getApp();
-    const targetDbId = process.env.FIREBASE_SERVICE_ACCOUNT ? '(default)' : config.firestoreDatabaseId;
-    db = targetDbId ? getFirestore(adminApp, targetDbId) : getFirestore(adminApp);
-    auth = getAuth(adminApp);
+  // 2. Check Base64 encoded Service Account
+  if (!serviceAccount && process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    try {
+      const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
+      serviceAccount = JSON.parse(decoded);
+    } catch (e: any) {
+      console.warn('⚠️ Could not parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e.message);
+    }
   }
-} catch (globalError) {
-  console.error("Global Firebase Initialization Error:", globalError);
+
+  // 3. Check Individual Firebase Env Variables
+  if (!serviceAccount && process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    try {
+      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+      if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+        privateKey = privateKey.slice(1, -1);
+      }
+      privateKey = privateKey.replace(/\\n/g, '\n');
+      
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: privateKey,
+      };
+    } catch (e: any) {
+      console.warn('⚠️ Could not parse individual Firebase credentials:', e.message);
+    }
+  }
+
+  // 4. Check local serviceAccount files in workspace (Local development)
+  if (!serviceAccount) {
+    const fileCandidates = [
+      'serviceAccountKey.json',
+      'firebase-service-account.json',
+      'service-account.json',
+      'firebase-applet-config.json'
+    ];
+
+    for (const fileName of fileCandidates) {
+      try {
+        const filePath = path.resolve(process.cwd(), fileName);
+        if (fs.existsSync(filePath)) {
+          const fileContent = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          if (fileContent.project_id && (fileContent.private_key || fileContent.client_email)) {
+            serviceAccount = fileContent;
+            break;
+          }
+        }
+      } catch (e) {
+        // Skip unreadable file
+      }
+    }
+  }
+
+  // Initialize Firebase Admin SDK
+  if (serviceAccount) {
+    if (!getApps().length) {
+      initializeApp({ credential: cert(serviceAccount) });
+    }
+    adminApp = getApp();
+    db = getFirestore(adminApp);
+    auth = getAuth(adminApp);
+    console.log('✅ Firebase Admin & Cloud Firestore connected successfully.');
+  } else {
+    console.log('ℹ️ No Firebase Service Account found in environment or local files. Running in local in-memory fallback mode.');
+  }
+} catch (globalError: any) {
+  console.error("Global Firebase Initialization Error:", globalError.message || globalError);
 }
 
 export { adminApp, db, auth };

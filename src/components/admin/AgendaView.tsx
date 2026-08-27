@@ -24,9 +24,9 @@ export default function AgendaView() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const fetchAgenda = async () => {
+  const fetchAgenda = async (quiet = false) => {
     try {
-      setLoading(true);
+      if (!quiet) setLoading(true);
       const res = await fetch('/api/admin/agenda');
       const data = await res.json();
       if (data.agenda) {
@@ -35,18 +35,37 @@ export default function AgendaView() {
           if (a.date !== b.date) return (a.date || '').localeCompare(b.date || '');
           return (a.startTime || '').localeCompare(b.startTime || '');
         });
-        setSessions(docs);
+        setSessions(prev => {
+          if (prev.length === docs.length) {
+            const same = prev.every((p, i) => docs[i] && JSON.stringify(p) === JSON.stringify(docs[i]));
+            if (same) return prev;
+          }
+          return docs;
+        });
       }
     } catch(e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAgenda();
-  }, []);
+    fetchAgenda(false);
+    const interval = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      if (isAdding || isEditing || confirmDelete) return;
+      fetchAgenda(true);
+    }, 10000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchAgenda(true);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [isAdding, isEditing, confirmDelete]);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('adminToken');

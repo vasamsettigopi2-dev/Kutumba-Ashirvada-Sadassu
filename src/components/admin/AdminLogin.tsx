@@ -18,7 +18,15 @@ export default function AdminLogin({ onAuth }: { onAuth: (user: any) => void }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      const data = await res.json();
+      
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = {};
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || `Server returned error (${res.status})`);
+      }
       
       if (res.ok && data.token) {
         localStorage.setItem('adminToken', data.token);

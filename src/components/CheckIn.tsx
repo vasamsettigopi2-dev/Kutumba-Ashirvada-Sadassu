@@ -94,7 +94,7 @@ export default function CheckIn() {
                 <p className="font-bold text-lg text-amber-500 mb-1">{result.data.name}</p>
                 <p className="text-zinc-300 font-mono text-base">{result.data.unique_code}</p>
                 <div className="flex justify-center gap-2 mt-2">
-                  <span className="px-2 py-1 bg-zinc-800 rounded text-xs">Size: {result.data.family_size}</span>
+                  <span className="px-2 py-1 bg-zinc-800 rounded text-xs">{result.data.gender || 'Adult'}</span>
                   <span className="px-2 py-1 bg-zinc-800 rounded text-xs">{result.data.category}</span>
                 </div>
               </div>

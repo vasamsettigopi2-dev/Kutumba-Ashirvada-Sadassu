@@ -1,8 +1,38 @@
+# Dependencies
 node_modules/
+
+# Build output
 build/
 dist/
 coverage/
-.DS_Store
-*.log
-.env*
+
+# Environment and secrets
+.env
+.env.*
 !.env.example
+Vercel_Environment_Variables.txt
+*serviceAccount*.json
+*service-account*.json
+firebase-applet-config.json
+
+# Local development data
+data/
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tmp
+*.temp
+.cache/
+
+# OS and editor artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
