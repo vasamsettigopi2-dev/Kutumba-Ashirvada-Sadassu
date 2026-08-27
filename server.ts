@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import path from 'path';
-import { dataService } from './src/lib/db-adapter';
+import { dataService } from './lib/db-adapter';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

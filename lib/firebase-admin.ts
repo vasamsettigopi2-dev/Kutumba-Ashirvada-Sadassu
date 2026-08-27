@@ -1,3 +1,8 @@
+// Vercel serverless: use REST transport instead of gRPC (prevents function crashes)
+if (process.env.VERCEL) {
+  process.env.GOOGLE_CLOUD_DISABLE_GRPC = 'true';
+}
+
 import 'dotenv/config';
 import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -97,7 +102,7 @@ try {
   }
 
   // Initialize Firebase Admin SDK
-  if (serviceAccount) {
+  if (serviceAccount?.private_key && serviceAccount?.client_email && serviceAccount?.project_id) {
     if (!getApps().length) {
       initializeApp({ credential: cert(serviceAccount) });
     }

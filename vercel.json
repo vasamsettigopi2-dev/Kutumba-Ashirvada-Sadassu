@@ -4,7 +4,11 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/admin/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/register",
       "destination": "/api/index"
     },
     {
@@ -16,7 +20,11 @@
     "api/index.ts": {
       "memory": 1024,
       "maxDuration": 30,
-      "includeFiles": "src/lib/**"
+      "includeFiles": "lib/**"
+    },
+    "api/health.ts": {
+      "memory": 256,
+      "maxDuration": 10
     }
   }
 }
