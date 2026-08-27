@@ -24,7 +24,7 @@ const DEFAULT_AGENDA = [
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
-    const { dataService } = await import('./lib/db-adapter');
+    const { dataService } = await import('./_lib/db-adapter');
     const agenda = await dataService.getAgenda();
     res.status(200).json({ agenda });
   } catch (error: any) {

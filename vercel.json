@@ -39,11 +39,13 @@
   "functions": {
     "api/index.ts": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "api/_lib/**"
     },
     "api/admin-agenda.ts": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "api/_lib/**"
     },
     "api/admin-login.ts": {
       "memory": 512,
@@ -51,7 +53,8 @@
     },
     "api/register.ts": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "api/_lib/**"
     },
     "api/test-firebase.ts": {
       "memory": 512,
