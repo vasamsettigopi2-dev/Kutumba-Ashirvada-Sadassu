@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/admin/agenda",
+      "destination": "/api/admin-agenda"
+    },
+    {
       "source": "/api/admin/registrations",
       "destination": "/api/index"
     },
@@ -25,11 +29,11 @@
     },
     {
       "source": "/api/admin/login",
-      "destination": "/api/index"
+      "destination": "/api/admin-login"
     },
     {
       "source": "/api/register",
-      "destination": "/api/index"
+      "destination": "/api/register"
     },
     {
       "source": "/(.*)",
@@ -42,9 +46,23 @@
       "maxDuration": 30,
       "includeFiles": "lib/**"
     },
-    "api/admin/agenda.ts": {
+    "api/admin-agenda.ts": {
       "memory": 1024,
       "maxDuration": 30,
+      "includeFiles": "lib/**"
+    },
+    "api/admin-login.ts": {
+      "memory": 512,
+      "maxDuration": 15
+    },
+    "api/register.ts": {
+      "memory": 1024,
+      "maxDuration": 30,
+      "includeFiles": "lib/**"
+    },
+    "api/test-firebase.ts": {
+      "memory": 512,
+      "maxDuration": 15,
       "includeFiles": "lib/**"
     },
     "api/health.ts": {

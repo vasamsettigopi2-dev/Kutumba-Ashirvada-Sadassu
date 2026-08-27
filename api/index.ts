@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (!cachedHandler) {
       const [{ default: app }, { default: serverless }] = await Promise.all([
-        import('../lib/app.js'),
+        import('../lib/app'),
         import('serverless-http'),
       ]);
       cachedHandler = serverless(app) as Handler;

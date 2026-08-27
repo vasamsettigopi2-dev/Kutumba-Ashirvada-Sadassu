@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { dataService } from '../lib/db-adapter';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
+    const { dataService } = await import('../lib/db-adapter');
     const agenda = await dataService.getAgenda();
     res.status(200).json({ agenda });
   } catch (error: any) {
