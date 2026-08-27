@@ -286,7 +286,9 @@ export default function InvitePage() {
                                     {session.speaker && <span className="text-zinc-500 text-xs mt-0.5">{session.speaker}</span>}
                                   </div>
                                   <div className="text-amber-500/80 font-mono text-xs whitespace-nowrap ml-2">
-                                    {session.startTime} - {session.endTime}
+                                    {session.startTime && session.endTime
+                                      ? `${session.startTime} - ${session.endTime}`
+                                      : session.time || ''}
                                   </div>
                                 </div>
                                 {(session.ytLiveLink || session.notesLink) && (

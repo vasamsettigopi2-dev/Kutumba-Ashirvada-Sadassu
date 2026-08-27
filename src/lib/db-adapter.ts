@@ -1,4 +1,4 @@
-import { db } from './firebase-admin.ts';
+import { db } from './firebase-admin';
 import fs from 'fs';
 import path from 'path';
 

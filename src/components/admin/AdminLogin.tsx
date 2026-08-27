@@ -20,12 +20,16 @@ export default function AdminLogin({ onAuth }: { onAuth: (user: any) => void }) 
       });
       
       const contentType = res.headers.get('content-type') || '';
+      const raw = await res.text();
       let data: any = {};
       if (contentType.includes('application/json')) {
-        data = await res.json();
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {
+          throw new Error(raw || `Server returned invalid JSON (${res.status})`);
+        }
       } else {
-        const text = await res.text();
-        throw new Error(text || `Server returned error (${res.status})`);
+        throw new Error(raw || `Server returned error (${res.status})`);
       }
       
       if (res.ok && data.token) {
