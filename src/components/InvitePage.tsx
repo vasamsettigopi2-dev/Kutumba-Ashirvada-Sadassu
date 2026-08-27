@@ -40,7 +40,7 @@ export default function InvitePage() {
     const timer = setTimeout(() => {
       setIsLoading(false);
       document.body.style.overflow = 'unset';
-    }, 2500);
+    }, 800);
     return () => {
       clearTimeout(timer);
       document.body.style.overflow = 'unset';

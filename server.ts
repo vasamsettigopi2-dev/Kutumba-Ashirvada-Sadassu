@@ -304,9 +304,17 @@ if (!process.env.VERCEL) {
       if (process.env.NODE_ENV !== "production") {
         const { createServer: createViteServer } = await import("vite");
         const vite = await createViteServer({
+          configFile: path.join(process.cwd(), 'vite.config.ts'),
           server: { middlewareMode: true },
           appType: "spa",
         });
+        console.log('⏳ Pre-bundling frontend dependencies (first start may take 30-60s)...');
+        await Promise.all([
+          vite.warmupRequest('/src/main.tsx'),
+          vite.warmupRequest('/src/App.tsx'),
+          vite.warmupRequest('/src/components/InvitePage.tsx'),
+        ]);
+        console.log('✅ Vite dev server ready');
         app.use(vite.middlewares);
       } else {
         const distPath = path.join(process.cwd(), 'dist');

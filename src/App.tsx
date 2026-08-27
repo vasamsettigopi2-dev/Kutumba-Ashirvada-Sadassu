@@ -5,8 +5,8 @@
 
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import InvitePage from './components/InvitePage';
 
-const InvitePage = lazy(() => import('./components/InvitePage'));
 const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 const CheckIn = lazy(() => import('./components/CheckIn'));
 

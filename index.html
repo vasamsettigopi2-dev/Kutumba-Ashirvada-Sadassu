@@ -15,10 +15,39 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anek+Telugu:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Anek+Telugu:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Anek+Telugu:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <style>
+      html, body { margin: 0; background: #09090b; color: #fafafa; }
+      #root { min-height: 100vh; }
+      .boot-loader {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #09090b;
+        color: #a1a1aa;
+        font-family: system-ui, sans-serif;
+      }
+      .boot-spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 2px solid rgba(245, 158, 11, 0.2);
+        border-top-color: #f59e0b;
+        border-radius: 9999px;
+        animation: boot-spin 0.8s linear infinite;
+        margin-right: 0.75rem;
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-loader" aria-live="polite" aria-busy="true">
+        <div class="boot-spinner"></div>
+        <span>Loading Kutumba Ashirvada Sadassu 2026...</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
