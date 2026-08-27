@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { getDb } from '../lib/firebase-admin';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
-    const { getDb } = await import('../lib/firebase-admin');
     const db = await getDb();
     res.status(200).json({ firebase_connected: Boolean(db) });
   } catch (error: any) {

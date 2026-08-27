@@ -1,18 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import serverless from 'serverless-http';
+import app from '../lib/app';
 
-type Handler = (req: VercelRequest, res: VercelResponse) => unknown;
-let cachedHandler: Handler | null = null;
+const handler = serverless(app);
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function vercelHandler(req: VercelRequest, res: VercelResponse) {
   try {
-    if (!cachedHandler) {
-      const [{ default: app }, { default: serverless }] = await Promise.all([
-        import('../lib/app'),
-        import('serverless-http'),
-      ]);
-      cachedHandler = serverless(app) as Handler;
-    }
-    return cachedHandler(req, res);
+    return handler(req, res);
   } catch (error: any) {
     console.error('API bootstrap error:', error);
     res.status(500).json({
