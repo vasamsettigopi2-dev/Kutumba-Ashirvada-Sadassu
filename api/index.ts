@@ -1,7 +1,17 @@
-import app from '../server';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import app from '../lib/app';
 
-export const config = {
-  maxDuration: 30,
-};
+let cachedHandler: ((req: VercelRequest, res: VercelResponse) => void) | null = null;
 
-export default app;
+async function getHandler() {
+  if (!cachedHandler) {
+    const { default: serverless } = await import('serverless-http');
+    cachedHandler = serverless(app);
+  }
+  return cachedHandler;
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const fn = await getHandler();
+  return fn(req, res);
+}

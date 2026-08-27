@@ -67,9 +67,9 @@ try {
       privateKey = privateKey.replace(/\\n/g, '\n');
       
       serviceAccount = {
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey,
+        project_id: process.env.FIREBASE_PROJECT_ID,
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        private_key: privateKey,
       };
     } catch (e: any) {
       console.warn('⚠️ Could not parse individual Firebase credentials:', e.message);
