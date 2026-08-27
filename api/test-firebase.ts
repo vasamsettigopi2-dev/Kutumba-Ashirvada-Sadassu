@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDb } from './_lib/firebase-admin';
+import { getDb } from './firebase-admin';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {

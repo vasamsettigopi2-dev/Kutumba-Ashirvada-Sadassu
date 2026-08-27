@@ -45,7 +45,7 @@
     "api/admin-agenda.ts": {
       "memory": 1024,
       "maxDuration": 30,
-      "includeFiles": "api/_lib/**"
+      "includeFiles": "api/db-adapter.ts,api/firebase-admin.ts"
     },
     "api/admin-login.ts": {
       "memory": 512,
@@ -54,11 +54,12 @@
     "api/register.ts": {
       "memory": 1024,
       "maxDuration": 30,
-      "includeFiles": "api/_lib/**"
+      "includeFiles": "api/db-adapter.ts,api/firebase-admin.ts"
     },
     "api/test-firebase.ts": {
       "memory": 512,
-      "maxDuration": 15
+      "maxDuration": 15,
+      "includeFiles": "api/firebase-admin.ts"
     },
     "api/health.ts": {
       "memory": 256,
