@@ -67,7 +67,14 @@ function loadLocalStore(): InMemoryStore {
   return { ...defaultStore };
 }
 
-let memoryStore: InMemoryStore = loadLocalStore();
+let memoryStore: InMemoryStore | null = null;
+
+function getMemoryStore(): InMemoryStore {
+  if (!memoryStore) {
+    memoryStore = loadLocalStore();
+  }
+  return memoryStore;
+}
 
 function persistLocalStore() {
   try {
@@ -75,7 +82,7 @@ function persistLocalStore() {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(memoryStore, null, 2), 'utf8');
+    fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(getMemoryStore(), null, 2), 'utf8');
   } catch (e) {
     console.error('Failed to save to local_db.json:', e);
   }
@@ -116,7 +123,7 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    return memoryStore.registrations.find(r => r.phone === phone) || null;
+    return getMemoryStore().registrations.find(r => r.phone === phone) || null;
   },
 
   async findRegistrationByCode(code: string) {
@@ -133,7 +140,7 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    return memoryStore.registrations.find(r => r.unique_code === code) || null;
+    return getMemoryStore().registrations.find(r => r.unique_code === code) || null;
   },
 
   async createRegistration(regData: any) {
@@ -163,12 +170,12 @@ export const dataService = {
     }
 
     // Local fallback
-    memoryStore.counters.registrations += 1;
-    const padded = memoryStore.counters.registrations.toString().padStart(4, '0');
+    getMemoryStore().counters.registrations += 1;
+    const padded = getMemoryStore().counters.registrations.toString().padStart(4, '0');
     const unique_code = `NGM2026-${padded}`;
     const id = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
     const record = { id, ...regData, unique_code };
-    memoryStore.registrations.unshift(record);
+    getMemoryStore().registrations.unshift(record);
     persistLocalStore();
     return { id, unique_code, record };
   },
@@ -191,7 +198,7 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    const local = [...memoryStore.registrations].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    const local = [...getMemoryStore().registrations].sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
     regCache = { data: local, time: Date.now() };
     return local;
   },
@@ -207,9 +214,9 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    const idx = memoryStore.registrations.findIndex(r => r.id === id);
+    const idx = getMemoryStore().registrations.findIndex(r => r.id === id);
     if (idx !== -1) {
-      memoryStore.registrations[idx] = { ...memoryStore.registrations[idx], ...updateData };
+      getMemoryStore().registrations[idx] = { ...getMemoryStore().registrations[idx], ...updateData };
       persistLocalStore();
       return true;
     }
@@ -228,7 +235,7 @@ export const dataService = {
           useMemoryFallback = true;
         }
       }
-      memoryStore.registrations = memoryStore.registrations.filter(r => r.id !== id);
+      getMemoryStore().registrations = getMemoryStore().registrations.filter(r => r.id !== id);
       persistLocalStore();
       return true;
     } else {
@@ -254,7 +261,7 @@ export const dataService = {
   async emptyBin(adminEmail = 'admin') {
     invalidateCaches();
     const db = await getDb();
-    const deletedDocs = memoryStore.registrations.filter(r => r.deleted);
+    const deletedDocs = getMemoryStore().registrations.filter(r => r.deleted);
     if (!useMemoryFallback && db) {
       try {
         for (const doc of deletedDocs) {
@@ -266,7 +273,7 @@ export const dataService = {
         console.warn('Error emptying cloud bin:', e);
       }
     }
-    memoryStore.registrations = memoryStore.registrations.filter(r => !r.deleted);
+    getMemoryStore().registrations = getMemoryStore().registrations.filter(r => !r.deleted);
     persistLocalStore();
     return true;
   },
@@ -289,8 +296,8 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    templatesCache = { data: memoryStore.templates, time: Date.now() };
-    return memoryStore.templates;
+    templatesCache = { data: getMemoryStore().templates, time: Date.now() };
+    return getMemoryStore().templates;
   },
 
   async saveTemplates(templates: any) {
@@ -304,7 +311,7 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    memoryStore.templates = { ...memoryStore.templates, ...templates };
+    getMemoryStore().templates = { ...getMemoryStore().templates, ...templates };
     persistLocalStore();
     return true;
   },
@@ -327,8 +334,8 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    agendaCache = { data: memoryStore.agenda, time: Date.now() };
-    return memoryStore.agenda;
+    agendaCache = { data: getMemoryStore().agenda, time: Date.now() };
+    return getMemoryStore().agenda;
   },
 
   async addAgenda(session: any) {
@@ -343,7 +350,7 @@ export const dataService = {
       }
     }
     const id = 'agenda_' + Date.now();
-    memoryStore.agenda.push({ id, ...session });
+    getMemoryStore().agenda.push({ id, ...session });
     persistLocalStore();
     return id;
   },
@@ -359,9 +366,9 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    const idx = memoryStore.agenda.findIndex(a => a.id === id);
+    const idx = getMemoryStore().agenda.findIndex(a => a.id === id);
     if (idx !== -1) {
-      memoryStore.agenda[idx] = { ...memoryStore.agenda[idx], ...session };
+      getMemoryStore().agenda[idx] = { ...getMemoryStore().agenda[idx], ...session };
       persistLocalStore();
       return true;
     }
@@ -379,7 +386,7 @@ export const dataService = {
         useMemoryFallback = true;
       }
     }
-    memoryStore.agenda = memoryStore.agenda.filter(a => a.id !== id);
+    getMemoryStore().agenda = getMemoryStore().agenda.filter(a => a.id !== id);
     persistLocalStore();
     return true;
   }

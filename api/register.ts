@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { dataService } from './_lib/db-adapter';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -6,7 +7,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { dataService } = await import('./_lib/db-adapter');
     const { name, phone, email, church_city, category, gender, days_attending } = req.body || {};
 
     if (!name || !phone || !days_attending || !Array.isArray(days_attending) || days_attending.length === 0) {
