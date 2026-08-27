@@ -32,10 +32,6 @@
       "destination": "/api/admin-login"
     },
     {
-      "source": "/api/register",
-      "destination": "/api/register"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -43,13 +39,11 @@
   "functions": {
     "api/index.ts": {
       "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "lib/**"
+      "maxDuration": 30
     },
     "api/admin-agenda.ts": {
       "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "lib/**"
+      "maxDuration": 30
     },
     "api/admin-login.ts": {
       "memory": 512,
@@ -57,13 +51,11 @@
     },
     "api/register.ts": {
       "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "lib/**"
+      "maxDuration": 30
     },
     "api/test-firebase.ts": {
       "memory": 512,
-      "maxDuration": 15,
-      "includeFiles": "lib/**"
+      "maxDuration": 15
     },
     "api/health.ts": {
       "memory": 256,
