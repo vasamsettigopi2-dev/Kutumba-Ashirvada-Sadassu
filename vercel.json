@@ -3,71 +3,32 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    {
-      "source": "/api/admin/agenda",
-      "destination": "/api/admin-agenda"
-    },
-    {
-      "source": "/api/admin/registrations",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/admin/checkin",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/admin/update_whatsapp_status",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/admin/registration/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/admin/settings/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/admin/login",
-      "destination": "/api/admin-login"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/admin/agenda/:id", "destination": "/api/admin-agenda?id=:id" },
+    { "source": "/api/admin/agenda", "destination": "/api/admin-agenda" },
+    { "source": "/api/admin/registrations", "destination": "/api/admin-registrations" },
+    { "source": "/api/admin/checkin", "destination": "/api/admin-checkin" },
+    { "source": "/api/admin/update_whatsapp_status", "destination": "/api/admin-update-whatsapp" },
+    { "source": "/api/admin/registration/update", "destination": "/api/admin-registration-update" },
+    { "source": "/api/admin/registration/delete", "destination": "/api/admin-registration-delete" },
+    { "source": "/api/admin/registration/restore", "destination": "/api/admin-registration-restore" },
+    { "source": "/api/admin/registration/empty_bin", "destination": "/api/admin-registration-empty-bin" },
+    { "source": "/api/admin/settings/templates", "destination": "/api/admin-settings-templates" },
+    { "source": "/api/admin/login", "destination": "/api/admin-login" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/index.ts": {
-      "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "api/_lib/**"
-    },
-    "api/admin-agenda.ts": {
-      "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts"
-    },
-    "api/admin-login.ts": {
-      "memory": 512,
-      "maxDuration": 15
-    },
-    "api/register.ts": {
-      "memory": 1024,
-      "maxDuration": 30,
-      "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts"
-    },
-    "api/test-firebase.ts": {
-      "memory": 512,
-      "maxDuration": 15,
-      "includeFiles": "api/_firebase-admin.ts"
-    },
-    "api/health.ts": {
-      "memory": 256,
-      "maxDuration": 10
-    },
-    "api/status.ts": {
-      "memory": 256,
-      "maxDuration": 10
-    }
+    "api/admin-agenda.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-registrations.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-settings-templates.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-registration-delete.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-registration-restore.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-registration-update.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-registration-empty-bin.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-checkin.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-update-whatsapp.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts,api/_auth.ts" },
+    "api/admin-login.ts": { "memory": 512, "maxDuration": 15 },
+    "api/register.ts": { "memory": 1024, "maxDuration": 30, "includeFiles": "api/_db-adapter.ts,api/_firebase-admin.ts" },
+    "api/health.ts": { "memory": 256, "maxDuration": 10 },
+    "api/status.ts": { "memory": 256, "maxDuration": 10 }
   }
 }
