@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { dataService } from './db-adapter';
+import { dataService } from './_db-adapter';
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {

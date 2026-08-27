@@ -1,4 +1,4 @@
-import { getDb } from './firebase-admin';
+import { getDb } from './_firebase-admin';
 import fs from 'fs';
 import path from 'path';
 

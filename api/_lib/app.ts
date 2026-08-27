@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { dataService } from '../db-adapter';
+import { dataService } from '../_db-adapter';
 
 const app = express();
 
