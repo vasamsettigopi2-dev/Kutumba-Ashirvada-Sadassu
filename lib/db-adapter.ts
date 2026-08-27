@@ -1,4 +1,4 @@
-import { db } from './firebase-admin';
+import { getDb } from './firebase-admin';
 import fs from 'fs';
 import path from 'path';
 
@@ -102,6 +102,7 @@ function invalidateCaches() {
 
 export const dataService = {
   async findRegistrationByPhone(phone: string) {
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const snap = await db.collection('registrations').where('phone', '==', phone).limit(1).get();
@@ -119,6 +120,7 @@ export const dataService = {
   },
 
   async findRegistrationByCode(code: string) {
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const snap = await db.collection('registrations').where('unique_code', '==', code).limit(1).get();
@@ -136,6 +138,7 @@ export const dataService = {
 
   async createRegistration(regData: any) {
     invalidateCaches();
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const counterRef = db.collection('counters').doc('registrations');
@@ -175,6 +178,7 @@ export const dataService = {
       return regCache.data;
     }
 
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const snap = await db.collection('registrations').get();
@@ -194,6 +198,7 @@ export const dataService = {
 
   async updateRegistration(id: string, updateData: any) {
     invalidateCaches();
+    const db = await getDb();
     if (!useMemoryFallback && db && !id.startsWith('local_')) {
       try {
         await db.collection('registrations').doc(id).update(updateData);
@@ -213,6 +218,7 @@ export const dataService = {
 
   async deleteRegistration(id: string, permanent = false, adminEmail = 'admin') {
     invalidateCaches();
+    const db = await getDb();
     if (permanent) {
       // Permanent removal from Firestore & local DB
       if (!useMemoryFallback && db && !id.startsWith('local_')) {
@@ -247,6 +253,7 @@ export const dataService = {
 
   async emptyBin(adminEmail = 'admin') {
     invalidateCaches();
+    const db = await getDb();
     const deletedDocs = memoryStore.registrations.filter(r => r.deleted);
     if (!useMemoryFallback && db) {
       try {
@@ -269,6 +276,7 @@ export const dataService = {
       return templatesCache.data;
     }
 
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const doc = await db.collection('settings').doc('messageTemplates').get();
@@ -287,6 +295,7 @@ export const dataService = {
 
   async saveTemplates(templates: any) {
     invalidateCaches();
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         await db.collection('settings').doc('messageTemplates').set(templates, { merge: true });
@@ -305,6 +314,7 @@ export const dataService = {
       return agendaCache.data;
     }
 
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const snap = await db.collection('agenda').get();
@@ -323,6 +333,7 @@ export const dataService = {
 
   async addAgenda(session: any) {
     invalidateCaches();
+    const db = await getDb();
     if (!useMemoryFallback && db) {
       try {
         const docRef = await db.collection('agenda').add(session);
@@ -339,6 +350,7 @@ export const dataService = {
 
   async updateAgenda(id: string, session: any) {
     invalidateCaches();
+    const db = await getDb();
     if (!useMemoryFallback && db && !id.startsWith('agenda_')) {
       try {
         await db.collection('agenda').doc(id).update(session);
@@ -358,6 +370,7 @@ export const dataService = {
 
   async deleteAgenda(id: string) {
     invalidateCaches();
+    const db = await getDb();
     if (!useMemoryFallback && db && !id.startsWith('agenda_')) {
       try {
         await db.collection('agenda').doc(id).delete();

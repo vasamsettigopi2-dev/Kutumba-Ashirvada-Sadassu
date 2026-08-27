@@ -4,7 +4,27 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/admin/:path*",
+      "source": "/api/admin/registrations",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/admin/checkin",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/admin/update_whatsapp_status",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/admin/registration/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/admin/settings/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/admin/login",
       "destination": "/api/index"
     },
     {
@@ -18,6 +38,11 @@
   ],
   "functions": {
     "api/index.ts": {
+      "memory": 1024,
+      "maxDuration": 30,
+      "includeFiles": "lib/**"
+    },
+    "api/admin/agenda.ts": {
       "memory": 1024,
       "maxDuration": 30,
       "includeFiles": "lib/**"
